@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Snake — A Classic Reimagined</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@500;700;800;900&display=swap');
+:root{
+  --bg:#07111f; --panel:#0e1b2d; --panel2:#14253b; --text:#f4fbff;
+  --muted:#91a8bc; --accent:#65e6a6; --accent2:#62b7ff; --danger:#ff6b7d;
+  --board:#0a1625; --grid:rgba(255,255,255,.045); --shadow:0 24px 70px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Nunito,system-ui,sans-serif;background:radial-gradient(circle at 50% -10%,#193a58 0,#07111f 48%,#040a12 100%);color:var(--text)}
+body{overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.hidden{display:none!important}
+.app{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:18px}
+.shell{width:min(1080px,100%);position:relative}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#7af0b0,#2ccf8b);box-shadow:0 8px 30px rgba(65,224,155,.22);display:grid;place-items:center;color:#062017;font-size:25px}
+.brand h1{font-size:20px;letter-spacing:.5px;margin:0}.brand small{display:block;color:var(--muted);font-weight:800;margin-top:2px}
+.pill{background:rgba(255,255,255,.07);padding:8px 12px;border-radius:999px;color:#c8d9e6;font-weight:900;font-size:12px}
+.screen{background:linear-gradient(180deg,rgba(17,34,54,.94),rgba(8,20,34,.96));border:1px solid rgba(255,255,255,.09);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}
+.menu{padding:54px 26px;text-align:center;position:relative;min-height:650px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.menu h2{font-family:'Press Start 2P',monospace;font-size:clamp(36px,9vw,78px);margin:0 0 13px;color:#72f2ad;text-shadow:0 7px 0 #1a7650,0 12px 30px rgba(45,221,140,.18)}
+.tagline{color:#b8ccdb;font-weight:800;margin:0 0 28px}
+.menu-snake{position:absolute;inset:20px;pointer-events:none;opacity:.15}
+.menu-snake span{position:absolute;width:28px;height:28px;border-radius:9px;background:#70edaa;box-shadow:0 0 18px #70edaa}
+.menu-snake span:nth-child(1){left:7%;top:18%}.menu-snake span:nth-child(2){left:10%;top:18%}.menu-snake span:nth-child(3){left:13%;top:18%}.menu-snake span:nth-child(4){left:16%;top:18%}.menu-snake span:nth-child(5){left:16%;top:23%}.menu-snake span:nth-child(6){left:16%;top:28%}.menu-snake span:nth-child(7){left:73%;top:72%}.menu-snake span:nth-child(8){left:70%;top:72%}.menu-snake span:nth-child(9){left:67%;top:72%}.menu-snake span:nth-child(10){left:64%;top:72%}
+.menu-buttons{display:grid;gap:10px;width:min(340px,100%);position:relative}
+.btn{padding:15px 18px;border-radius:15px;background:linear-gradient(180deg,#1c3550,#14283e);font-weight:900;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 20px rgba(0,0,0,.18);transition:.15s transform,.15s filter}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg,#67e9a5,#35ca88);color:#062016;border-color:transparent}
+.btn.secondary{background:rgba(255,255,255,.055)}
+.hint{margin-top:22px;color:#7790a4;font-size:12px;font-weight:800}
+.game{padding:14px}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.stat{flex:1;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:9px 13px}
+.stat label{display:block;color:#7992a7;font-size:10px;font-weight:900;letter-spacing:1px}.stat strong{font-family:'Press Start 2P',monospace;font-size:14px}
+.iconbtn{width:44px;height:44px;border-radius:13px;background:#172b42;font-size:18px}
+.board-wrap{display:flex;justify-content:center;position:relative}
+canvas{display:block;width:min(78vh,760px,calc(100vw - 42px));height:auto;aspect-ratio:1;border-radius:21px;background:var(--board);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 20px 55px rgba(0,0,0,.28);touch-action:none}
+.mobile-hint{text-align:center;color:#718ba0;font-size:11px;font-weight:900;letter-spacing:.8px;padding:10px 0 3px}
+.controls{display:grid;grid-template-columns:repeat(3,70px);gap:7px;justify-content:center;margin:8px auto 0}
+.dpad{width:70px;height:54px;border-radius:14px;background:#162b42;border:1px solid rgba(255,255,255,.07);font-size:20px;font-weight:900}
+.dpad:active{background:#21405d;transform:scale(.96)}.up{grid-column:2}.left{grid-column:1}.down{grid-column:2}.right{grid-column:3}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(3,10,18,.68);backdrop-filter:blur(6px);border-radius:21px}
+.card{width:min(390px,90%);text-align:center;background:linear-gradient(180deg,#14283e,#0d1d30);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.card h3{font-family:'Press Start 2P';font-size:25px;margin:0 0 15px;color:#72f2ad}.scorebig{font-family:'Press Start 2P';font-size:20px;margin:10px}.new{color:#ffd866;font-weight:900;animation:pulse 1s infinite alternate}@keyframes pulse{to{transform:scale(1.05)}}
+.modal{position:fixed;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.62);z-index:10}.modal .card{text-align:left;max-height:85dvh;overflow:auto}.modal h3{margin-bottom:20px}.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07)}.row b{font-size:14px}.select{display:flex;gap:6px}.select button{padding:8px 10px;border-radius:9px;background:#172c42;font-size:11px;font-weight:900}.select button.active{background:#62e3a1;color:#062016}
+.close{float:right;background:rgba(255,255,255,.07);width:34px;height:34px;border-radius:10px}
+.achievement{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-150%);z-index:20;background:#12283d;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:11px 15px;box-shadow:0 15px 40px rgba(0,0,0,.35);font-weight:900;transition:.35s}.achievement.show{transform:translateX(-50%) translateY(0)}.achievement span{color:#ffd866}
+.retro{--bg:#9bbc0f;--panel:#8bac0f;--panel2:#306230;--text:#0f380f;--muted:#306230;--accent:#0f380f;--accent2:#306230;--board:#9bbc0f}.retro body{background:#9bbc0f}
+body.retro{background:#9bbc0f;color:#0f380f}.retro .screen{background:#8bac0f;border:3px solid #306230;box-shadow:8px 8px 0 #306230}.retro .btn,.retro .stat,.retro .iconbtn,.retro .dpad{background:#8bac0f;color:#0f380f;border:2px solid #306230;box-shadow:none}.retro .menu h2{color:#0f380f;text-shadow:3px 3px #8bac0f}.retro canvas{background:#9bbc0f;box-shadow:none;border:3px solid #306230}.retro .card,.retro .modal{color:#0f380f}.retro .card{background:#8bac0f;border:3px solid #306230}.retro .card h3{color:#0f380f}.retro .pill{background:#8bac0f;color:#0f380f;border:2px solid #306230}.retro .brand .logo{background:#0f380f;color:#9bbc0f;box-shadow:none}
+@media(max-width:650px){.app{padding:8px}.screen{border-radius:20px}.menu{min-height:calc(100dvh - 70px);padding:35px 18px}.game{padding:9px}.stat{padding:7px 9px}.stat strong{font-size:11px}.controls{grid-template-columns:repeat(3,62px)}.dpad{width:62px;height:50px}header{margin-bottom:8px}.brand h1{font-size:17px}.brand small{font-size:10px}}
+@media(min-width:651px){.controls,.mobile-hint{display:none}}
+</style>
+</head>
+<body>
+<div class="app"><div class="shell">
+<header><div class="brand"><div class="logo">🐍</div><div><h1>SNAKE</h1><small>A Classic Reimagined</small></div></div><div class="pill" id="modePill">CLASSIC</div></header>
+
+<section id="menu" class="screen menu">
+  <div class="menu-snake"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <h2>SNAKE</h2><p class="tagline">A Classic Reimagined</p>
+  <div class="menu-buttons">
+    <button class="btn primary" id="play">PLAY</button>
+    <button class="btn" id="modes">GAME MODES</button>
+    <button class="btn" id="how">HOW TO PLAY</button>
+    <button class="btn" id="settings">SETTINGS</button>
+  </div>
+  <div class="hint">ARROWS / WASD • SWIPE ON MOBILE • SPACE TO PAUSE</div>
+</section>
+
+<section id="game" class="screen game hidden">
+  <div class="topbar">
+    <div class="stat"><label>SCORE</label><strong id="score">000000</strong></div>
+    <div class="stat"><label>BEST</label><strong id="best">000000</strong></div>
+    <button class="iconbtn" id="pause" aria-label="Pause">Ⅱ</button>
+  </div>
+  <div class="board-wrap"><canvas id="canvas" width="720" height="720"></canvas>
+    <div id="pauseOverlay" class="overlay hidden"><div class="card"><h3>PAUSED</h3><p>Take a breath. Your snake is waiting.</p><button class="btn primary" id="resume">RESUME</button></div></div>
+    <div id="overOverlay" class="overlay hidden"><div class="card"><h3>GAME OVER</h3><div class="scorebig" id="finalScore">000000</div><div id="newHigh" class="new hidden">🎉 NEW HIGH SCORE!</div><p id="gameMessage">Nice run!</p><button class="btn primary" id="again">PLAY AGAIN</button><button class="btn secondary" id="menuBtn" style="margin-top:8px">MAIN MENU</button></div></div>
+  </div>
+  <div class="mobile-hint">SWIPE TO MOVE</div>
+  <div class="controls">
+    <button class="dpad up" data-dir="up">▲</button><button class="dpad left" data-dir="left">◀</button><button class="dpad down" data-dir="down">▼</button><button class="dpad right" data-dir="right">▶</button>
+  </div>
+</section>
+</div></div>
+
+<div id="modal" class="modal hidden"><div class="card"><button class="close" id="close">×</button><h3 id="modalTitle">GAME MODES</h3><div id="modalBody"></div></div></div>
+<div id="achievement" class="achievement">🏅 <span id="achTitle">Achievement!</span></div>
+
+<script>
+(() => {
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const menu=document.getElementById('menu'), game=document.getElementById('game');
+const scoreEl=document.getElementById('score'), bestEl=document.getElementById('best'), modePill=document.getElementById('modePill');
+const N=24, cell=canvas.width/N;
+let snake,dir,nextDir,food,score,best=+(localStorage.snakeBest||0),running=false,paused=false,mode='classic',retro=false;
+let timer=0, last=0, speed=145, combo=0, comboTimer=0, particles=[], floaters=[], shake=0, touchStart=null;
+let special=null, specialUntil=0, audioCtx=null, musicOn=localStorage.music!=='0', soundOn=localStorage.sound!=='0';
+let achievements=JSON.parse(localStorage.snakeAchievements||'{}');
+bestEl.textContent=pad(best);
+
+function pad(n){return String(Math.max(0,n)).padStart(6,'0')}
+function setScore(){scoreEl.textContent=pad(score);bestEl.textContent=pad(best);scoreEl.animate([{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:180})}
+function sound(type){
+ if(!soundOn)return;
+ audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+ const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+ const now=audioCtx.currentTime, f={eat:620,bonus:920,combo:1100,level:760,over:160,click:420}[type]||500;
+ o.frequency.setValueAtTime(f,now); o.frequency.exponentialRampToValueAtTime(type==='over'?80:f*1.35,now+.11);
+ g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.055,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+.12);
+ o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(now+.13);
+}
+function randCell(){return {x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
+function occupied(p){return snake.some(s=>s.x===p.x&&s.y===p.y)}
+function spawnFood(){
+ let p; do{p=randCell()}while(occupied(p));
+ const r=Math.random();
+ special = r<.06?'gold':r<.10?'speed':r<.14?'slow':r<.16?'bonus':null;
+ specialUntil=special?Date.now()+9000:0; food=p;
+}
+function reset(){
+ snake=[{x:Math.floor(N/2),y:Math.floor(N/2)},{x:Math.floor(N/2)-1,y:Math.floor(N/2)},{x:Math.floor(N/2)-2,y:Math.floor(N/2)}];
+ dir={x:1,y:0};nextDir={...dir};score=0;combo=0;comboTimer=0;particles=[];floaters=[];shake=0;speed=145;spawnFood();setScore();paused=false;running=true;timer=0;
+ document.getElementById('overOverlay').classList.add('hidden');document.getElementById('pauseOverlay').classList.add('hidden');last=performance.now();requestAnimationFrame(loop);
+}
+function setDirection(x,y){
+ if(!running||paused)return;
+ if(x===-dir.x&&y===-dir.y)return;
+ nextDir={x,y};
+}
+function level(){return Math.min(12,1+Math.floor(score/100))}
+function step(){
+ dir=nextDir;
+ let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+ const endless=mode==='endless';
+ if(endless){h.x=(h.x+N)%N;h.y=(h.y+N)%N}
+ if(!endless && (h.x<0||h.x>=N||h.y<0||h.y>=N))return crash();
+ if(snake.some((s,i)=>i>0&&s.x===h.x&&s.y===h.y))return crash();
+ snake.unshift(h);
+ let ate=h.x===food.x&&h.y===food.y;
+ if(ate){
+   const mult=1+Math.min(combo,4)*.1; let points=special==='gold'?25:special==='bonus'?50:10;
+   score+=Math.round(points*mult);combo++;comboTimer=1300;
+   if(special==='speed')speed=Math.max(72,speed-25);
+   if(special==='slow')speed=Math.min(190,speed+28);
+   for(let i=0;i<12;i++)particles.push({x:food.x*cell+cell/2,y:food.y*cell+cell/2,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,life:1});
+   floaters.push({x:food.x*cell+cell/2,y:food.y*cell,txt:'+'+(points),life:1});
+   sound(special==='bonus'||special==='gold'?'bonus':'eat');
+   if(combo>=2)sound('combo');
+   if(score>best){best=score;localStorage.snakeBest=best}
+   achievementsCheck();
+   spawnFood();setScore();
+ } else snake.pop();
+ comboTimer-=speed;if(comboTimer<=0)combo=0;
+ speed=Math.max(68,145-(level()-1)*6);
+}
+function crash(){
+ running=false;shake=8;sound('over');
+ document.getElementById('finalScore').textContent=pad(score);
+ document.getElementById('newHigh').classList.toggle('hidden',score<best || score===0);
+ document.getElementById('gameMessage').textContent=score>=1000?'That was a legendary run!':score>=500?'Great snake work!':'Good run — go again!';
+ document.getElementById('overOverlay').classList.remove('hidden');
+}
+function loop(t){
+ if(!running)return;
+ const dt=Math.min(50,t-last);last=t;
+ if(!paused){timer+=dt;if(timer>=speed){timer=0;step()}}
+ draw(t);
+ if(running)requestAnimationFrame(loop);
+}
+function roundedRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.fill()}
+function draw(t){
+ let sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;shake*=.88;
+ ctx.save();ctx.translate(sx,sy);ctx.clearRect(-10,-10,canvas.width+20,canvas.height+20);
+ if(retro) drawRetro(); else drawModern(t);
+ ctx.restore();
+ particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=.96;p.vy*=.96;p.life-=.045});
+ particles=particles.filter(p=>p.life>0);
+ floaters.forEach(f=>{f.y-=.5;f.life-=.035});floaters=floaters.filter(f=>f.life>0);
+}
+function drawModern(t){
+ ctx.fillStyle='#091827';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+ for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,canvas.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(canvas.width,i*cell);ctx.stroke()}
+ // food glow
+ const pulse=1+Math.sin(t/130)*.07, fx=food.x*cell+cell/2,fy=food.y*cell+cell/2;
+ let fc=special==='gold'?'#ffd45c':special==='speed'?'#ff8a65':special==='slow'?'#76c8ff':special==='bonus'?'#d48cff':'#ff6577';
+ ctx.shadowBlur=22;ctx.shadowColor=fc;ctx.fillStyle=fc;ctx.beginPath();ctx.arc(fx,fy,cell*.27*pulse,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ ctx.fillStyle='#65e6a6';
+ snake.forEach((s,i)=>{
+   const x=s.x*cell+3,y=s.y*cell+3,w=cell-6,r=i===0?10:8;
+   ctx.globalAlpha=1-Math.min(i/snake.length*.25,.25);
+   ctx.fillStyle=i===0?'#78f2b0':'#42d994';roundedRect(ctx,x,y,w,w,r);
+   if(i>0){ctx.fillStyle='rgba(255,255,255,.11)';roundedRect(ctx,x+5,y+4,w*.25,4,2)}
+ });
+ ctx.globalAlpha=1;
+ const h=snake[0], ex=h.x*cell+cell/2,ey=h.y*cell+cell/2,ox=dir.x*4,oy=dir.y*4;
+ ctx.fillStyle='#062017';ctx.beginPath();ctx.arc(ex-5+ox,ey-5+oy,3,0,Math.PI*2);ctx.arc(ex+5+ox,ey-5+oy,3,0,Math.PI*2);ctx.fill();
+ particles.forEach(p=>{ctx.globalAlpha=p.life;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.x,p.y,2.5*p.life,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;
+ floaters.forEach(f=>{ctx.globalAlpha=f.life;ctx.fillStyle='#fff';ctx.font='900 18px Nunito';ctx.textAlign='center';ctx.fillText(f.txt,f.x,f.y);});ctx.globalAlpha=1;
+ if(combo>=2){ctx.fillStyle='#ffd866';ctx.font='900 14px Nunito';ctx.textAlign='left';ctx.fillText('COMBO x'+combo,14,26)}
+}
+function drawRetro(){
+ ctx.fillStyle='#9bbc0f';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle='rgba(15,56,15,.12)';for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,canvas.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(canvas.width,i*cell);ctx.stroke()}
+ ctx.fillStyle='#0f380f';const fx=food.x*cell+cell/2,fy=food.y*cell+cell/2;ctx.fillRect(fx-cell*.2,fy-cell*.2,cell*.4,cell*.4);
+ snake.forEach((s,i)=>{ctx.fillStyle='#0f380f';ctx.fillRect(s.x*cell+4,s.y*cell+4,cell-8,cell-8)});
+}
+function start(){menu.classList.add('hidden');game.classList.remove('hidden');modePill.textContent=mode.toUpperCase();reset()}
+function mainMenu(){running=false;game.classList.add('hidden');menu.classList.remove('hidden');modePill.textContent=mode.toUpperCase()}
+function togglePause(){if(!running)return;paused=!paused;document.getElementById('pauseOverlay').classList.toggle('hidden',!paused);if(!paused){last=performance.now();requestAnimationFrame(loop)}sound('click')}
+function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.remove('hidden')}
+function achievementsCheck(){
+ const tests=[['first','🍎 First Bite',score>=10],['grow','🐍 Growing Up',snake.length>=20],['master','🔥 Snake Master',snake.length>=50],['roller','🏆 High Roller',score>=1000],['legend','👑 Snake Legend',score>=5000]];
+ tests.forEach(([id,title,ok])=>{if(ok&&!achievements[id]){achievements[id]=1;localStorage.snakeAchievements=JSON.stringify(achievements);showAch(title)}})
+}
+function showAch(title){document.getElementById('achTitle').textContent=title;const a=document.getElementById('achievement');a.classList.add('show');setTimeout(()=>a.classList.remove('show'),2600);sound('bonus')}
+document.addEventListener('keydown',e=>{
+ const k=e.key.toLowerCase();const map={arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]};
+ if(map[k]){e.preventDefault();setDirection(...map[k])} else if(k===' '){e.preventDefault();togglePause()}
+});
+document.querySelectorAll('.dpad').forEach(b=>b.addEventListener('pointerdown',()=>{const d=b.dataset.dir;setDirection(...({up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[d]));sound('click')}));
+canvas.addEventListener('touchstart',e=>{const p=e.changedTouches[0];touchStart={x:p.clientX,y:p.clientY}},{passive:true});
+canvas.addEventListener('touchend',e=>{if(!touchStart)return;const p=e.changedTouches[0],dx=p.clientX-touchStart.x,dy=p.clientY-touchStart.y;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return; if(Math.abs(dx)>Math.abs(dy))setDirection(dx>0?1:-1,0);else setDirection(0,dy>0?1:-1,0);touchStart=null},{passive:true});
+document.getElementById('play').onclick=start;
+document.getElementById('again').onclick=reset;
+document.getElementById('menuBtn').onclick=mainMenu;
+document.getElementById('pause').onclick=togglePause;
+document.getElementById('resume').onclick=togglePause;
+document.getElementById('modes').onclick=()=>openModal('GAME MODES',`<div class="row"><b>Classic</b><button class="btn primary" onclick="chooseMode('classic')">SELECT</button></div><div class="row"><b>Endless</b><button class="btn" onclick="chooseMode('endless')">SELECT</button></div><div class="row"><b>Time Challenge</b><button class="btn" onclick="chooseMode('time')">SELECT</button></div><p style="color:#91a8bc;font-size:12px;margin-top:15px">Classic is the recommended nostalgic experience. Endless wraps at the board edge. Time Challenge lasts 60 seconds.</p>`);
+document.getElementById('how').onclick=()=>openModal('HOW TO PLAY',`<p>🐍 <b>Move</b> with Arrow Keys or WASD. On mobile, swipe or tap the arrows.</p><p>🍎 <b>Eat fruit</b> to grow and score points.</p><p>🚧 <b>Avoid</b> walls and your own body.</p><p>🔥 Chain pickups for a combo. Special fruit appears occasionally.</p><p>⏸️ Press Space or the pause button anytime.</p>`);
+document.getElementById('settings').onclick=()=>openModal('SETTINGS',`<div class="row"><b>Visual style</b><div class="select"><button class="${!retro?'active':''}" onclick="setVisual(false)">Modern</button><button class="${retro?'active':''}" onclick="setVisual(true)">Retro</button></div></div><div class="row"><b>Sound</b><button class="btn" onclick="soundOn=!soundOn;localStorage.sound=soundOn?'1':'0';this.textContent=soundOn?'🔊 ON':'🔇 OFF'">${soundOn?'🔊 ON':'🔇 OFF'}</button></div><div class="row"><b>Music</b><button class="btn" onclick="musicOn=!musicOn;localStorage.music=musicOn?'1':'0';this.textContent=musicOn?'🎵 ON':'🎵 OFF'">${musicOn?'🎵 ON':'🎵 OFF'}</button></div><p style="color:#91a8bc;font-size:12px">Your best score, achievements and preferences are saved on this device.</p>`);
+document.getElementById('close').onclick=()=>document.getElementById('modal').classList.add('hidden');
+window.chooseMode=(m)=>{mode=m;modePill.textContent=m.toUpperCase();document.getElementById('modal').classList.add('hidden');start()};
+window.setVisual=(r)=>{retro=r;document.body.classList.toggle('retro',retro);document.getElementById('modal').classList.add('hidden');localStorage.retro=retro?'1':'0'};
+retro=localStorage.retro==='1';document.body.classList.toggle('retro',retro);setScore();drawModern(0);
+})();
+</script>
+</body>
+</html>
